@@ -1,0 +1,223 @@
+import tkinter as tk
+from tkinter import messagebox
+import mysql.connector
+
+# Database connection
+db = mysql.connector.connect(
+    host="localhost",
+    user="your_username",
+    password="your_password",
+    database="college_management"
+)
+
+cursor = db.cursor()
+
+class App:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("College Management System")
+        self.root.geometry("600x400")
+
+        self.create_menu()
+
+        self.result_label = tk.Label(root, text="", anchor="center", justify="center")
+        self.result_label.place(relx=0.5, rely=0.5, anchor="center")
+
+    def create_menu(self):
+        menubar = tk.Menu(self.root)
+
+        student_menu = tk.Menu(menubar, tearoff=0)
+        student_menu.add_command(label="Add Student", command=self.add_student)
+        student_menu.add_command(label="Update Student", command=self.update_student)
+        menubar.add_cascade(label="Student", menu=student_menu)
+
+        fee_menu = tk.Menu(menubar, tearoff=0)
+        fee_menu.add_command(label="Update Fee", command=self.update_fee)
+        fee_menu.add_command(label="Pay Fee", command=self.pay_fee)
+        menubar.add_cascade(label="Fee", menu=fee_menu)
+
+        result_menu = tk.Menu(menubar, tearoff=0)
+        result_menu.add_command(label="Add Result", command=self.add_result)
+        result_menu.add_command(label="View Results", command=self.view_results)
+        menubar.add_cascade(label="Results", menu=result_menu)
+
+        self.root.config(menu=menubar)
+
+    def add_student(self):
+        self.clear_screen()
+
+        def save_student():
+            student_id = int(student_id_entry.get())
+            name = name_entry.get()
+            age = int(age_entry.get())
+            course = course_entry.get()
+            
+            cursor.execute("INSERT INTO students (student_id, name, age, course) VALUES (%s, %s, %s, %s)",
+                           (student_id, name, age, course))
+            cursor.execute("INSERT INTO fees (student_id, fee_due) VALUES (%s, %s)", (student_id, 0))
+            db.commit()
+
+            messagebox.showinfo("Success", "Student added successfully")
+            self.clear_screen()
+
+        tk.Label(self.root, text="Student ID").grid(row=0, column=0)
+        student_id_entry = tk.Entry(self.root)
+        student_id_entry.grid(row=0, column=1)
+
+        tk.Label(self.root, text="Name").grid(row=1, column=0)
+        name_entry = tk.Entry(self.root)
+        name_entry.grid(row=1, column=1)
+
+        tk.Label(self.root, text="Age").grid(row=2, column=0)
+        age_entry = tk.Entry(self.root)
+        age_entry.grid(row=2, column=1)
+
+        tk.Label(self.root, text="Course").grid(row=3, column=0)
+        course_entry = tk.Entry(self.root)
+        course_entry.grid(row=3, column=1)
+
+        tk.Button(self.root, text="Save", command=save_student).grid(row=4, columnspan=2)
+
+    def update_student(self):
+        self.clear_screen()
+
+        def save_updated_student():
+            student_id = int(student_id_entry.get())
+            name = name_entry.get()
+            age = int(age_entry.get())
+            course = course_entry.get()
+            
+            cursor.execute("UPDATE students SET name=%s, age=%s, course=%s WHERE student_id=%s",
+                           (name, age, course, student_id))
+            db.commit()
+
+            messagebox.showinfo("Success", "Student updated successfully")
+            self.clear_screen()
+
+        tk.Label(self.root, text="Student ID").grid(row=0, column=0)
+        student_id_entry = tk.Entry(self.root)
+        student_id_entry.grid(row=0, column=1)
+
+        tk.Label(self.root, text="Name").grid(row=1, column=0)
+        name_entry = tk.Entry(self.root)
+        name_entry.grid(row=1, column=1)
+
+        tk.Label(self.root, text="Age").grid(row=2, column=0)
+        age_entry = tk.Entry(self.root)
+        age_entry.grid(row=2, column=1)
+
+        tk.Label(self.root, text="Course").grid(row=3, column=0)
+        course_entry = tk.Entry(self.root)
+        course_entry.grid(row=3, column=1)
+
+        tk.Button(self.root, text="Update", command=save_updated_student).grid(row=4, columnspan=2)
+
+    def update_fee(self):
+        self.clear_screen()
+
+        def save_fee_update():
+            student_id = int(student_id_entry.get())
+            fee_due = int(fee_due_entry.get())
+            
+            cursor.execute("UPDATE fees SET fee_due = fee_due + %s WHERE student_id=%s", (fee_due, student_id))
+            db.commit()
+
+            messagebox.showinfo("Success", "Fee updated successfully")
+            self.clear_screen()
+
+        tk.Label(self.root, text="Student ID").grid(row=0, column=0)
+        student_id_entry = tk.Entry(self.root)
+        student_id_entry.grid(row=0, column=1)
+
+        tk.Label(self.root, text="Fee Due").grid(row=1, column=0)
+        fee_due_entry = tk.Entry(self.root)
+        fee_due_entry.grid(row=1, column=1)
+
+        tk.Button(self.root, text="Update Fee", command=save_fee_update).grid(row=2, columnspan=2)
+
+    def pay_fee(self):
+        self.clear_screen()
+
+        def save_fee_payment():
+            student_id = int(student_id_entry.get())
+            amount = int(fee_paid_entry.get())
+
+            cursor.execute("SELECT fee_due FROM fees WHERE student_id=%s", (student_id,))
+            current_due = cursor.fetchone()[0]
+
+            if amount > current_due:
+                messagebox.showerror("Error", "Amount exceeds due fee. Please pay the exact or less amount.")
+            else:
+                cursor.execute("UPDATE fees SET fee_due = fee_due - %s WHERE student_id=%s", (amount, student_id))
+                db.commit()
+                messagebox.showinfo("Success", "Fee paid successfully")
+                self.clear_screen()
+
+        tk.Label(self.root, text="Student ID").grid(row=0, column=0)
+        student_id_entry = tk.Entry(self.root)
+        student_id_entry.grid(row=0, column=1)
+
+        tk.Label(self.root, text="Amount").grid(row=1, column=0)
+        fee_paid_entry = tk.Entry(self.root)
+        fee_paid_entry.grid(row=1, column=1)
+
+        tk.Button(self.root, text="Pay Fee", command=save_fee_payment).grid(row=2, columnspan=2)
+
+    def add_result(self):
+        self.clear_screen()
+
+        def save_result():
+            student_id = int(student_id_entry.get())
+            subject = subject_entry.get()
+            grade = grade_entry.get()
+            
+            cursor.execute("INSERT INTO results (student_id, subject, grade) VALUES (%s, %s, %s)",
+                           (student_id, subject, grade))
+            db.commit()
+
+            messagebox.showinfo("Success", "Result added successfully")
+            self.clear_screen()
+
+        tk.Label(self.root, text="Student ID").grid(row=0, column=0)
+        student_id_entry = tk.Entry(self.root)
+        student_id_entry.grid(row=0, column=1)
+
+        tk.Label(self.root, text="Subject").grid(row=1, column=0)
+        subject_entry = tk.Entry(self.root)
+        subject_entry.grid(row=1, column=1)
+
+        tk.Label(self.root, text="Grade").grid(row=2, column=0)
+        grade_entry = tk.Entry(self.root)
+        grade_entry.grid(row=2, column=1)
+
+        tk.Button(self.root, text="Add Result", command=save_result).grid(row=3, columnspan=2)
+
+    def view_results(self):
+        self.clear_screen()
+
+        def display_results():
+            student_id = int(student_id_entry.get())
+            
+            cursor.execute("SELECT subject, grade FROM results WHERE student_id=%s", (student_id,))
+            results = cursor.fetchall()
+            
+            result_text = "Results:\n"
+            for subject, grade in results:
+                result_text += f"{subject}: {grade}\n"
+
+            self.result_label.config(text=result_text)
+
+        tk.Label(self.root, text="Student ID").grid(row=0, column=0)
+        student_id_entry = tk.Entry(self.root)
+        student_id_entry.grid(row=0, column=1)
+
+        tk.Button(self.root, text="View Results", command=display_results).grid(row=1, columnspan=2)
+
+    def clear_screen(self):
+        for widget in self.root.winfo_children():
+            widget.grid_remove()
+
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = App(root)
+    root.mainloop()
